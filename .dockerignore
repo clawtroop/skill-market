@@ -1,0 +1,27 @@
+# deps & build (镜像内会重新安装/编译)
+node_modules
+dist
+
+# 本地数据与归档（76M tar.gz + 8.5M SQL，绝不进镜像）
+dist-archives
+reference
+
+# secrets（含 TOS 密钥，严禁打进镜像）
+.env
+.env.local
+
+# vcs & meta
+.git
+.gitignore
+
+# logs & temp
+*.log
+npm-debug.log*
+tmp
+*.tmp
+
+# OS / IDE
+.DS_Store
+.idea
+.vscode
+*.swp

@@ -25,27 +25,26 @@ services:
     environment:
       PORT: 4000
       DATABASE_URL: postgres://skillmarket:skillmarket@db:5432/skillmarket
-      # Fill these for real TOS (or use a mock/local in dev)
-      TOS_ENDPOINT: ${TOS_ENDPOINT:-https://tos-s3-cn-beijing.volces.com}
+      # 生产请通过 .env / 部署平台覆盖这些；以下默认值仅为本地起容器不报错。
+      # 火山原生 SDK 用不带 -s3 的域名（华东2上海）。
+      TOS_ENDPOINT: ${TOS_ENDPOINT:-https://tos-cn-shanghai.volces.com}
       TOS_ACCESS_KEY: ${TOS_ACCESS_KEY:-dummy}
       TOS_SECRET_KEY: ${TOS_SECRET_KEY:-dummy}
-      TOS_BUCKET: ${TOS_BUCKET:-skill-market-dev}
-      TOS_REGION: ${TOS_REGION:-cn-beijing}
-      TOS_PREFIX: ${TOS_PREFIX:-skills/}
+      TOS_BUCKET: ${TOS_BUCKET:-nanobee-dev}
+      TOS_REGION: ${TOS_REGION:-cn-shanghai}
+      # 必须与实际上传路径 + SQL 里的 tos_object_key 对齐（上传时多套了一层 skills/）。
+      TOS_PREFIX: ${TOS_PREFIX:-skill-market-mcp/skills/}
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4000}
       # For local dev you can point INGEST_CATALOG_ROOT to the reference inside the container via volume if needed
       SKILL_MARKET_INGEST_CATALOG_ROOT: ${SKILL_MARKET_INGEST_CATALOG_ROOT:-/data/reference-skills}
     ports:
       - "4000:4000"
-    volumes:
-      # Mount host reference catalog for ingest inside container (adjust path)
-      - ./reference:/data/reference:ro
-    # Run migrate first (compiled JS if present) so that skill_market_items table exists before the app tries to load the index.
-    # The migrate script is idempotent (CREATE TABLE IF NOT EXISTS).
+    # 启动前先建表（幂等 CREATE TABLE IF NOT EXISTS），再起服务。
+    # 环境变量由上方 environment 注入，不依赖镜像内 .env 文件（镜像已 .dockerignore 排除 .env）。
     command: >
       sh -c '
-        node --env-file .env dist/scripts/migrate.js || node --env-file .env -r tsx/cjs scripts/migrate.ts || echo "migrate step completed or skipped";
-        exec node --env-file .env dist/src/main.js
+        node dist/scripts/migrate.js || node -r tsx/cjs scripts/migrate.ts || echo "migrate step completed or skipped";
+        exec node dist/src/main.js
       '
 
 volumes:

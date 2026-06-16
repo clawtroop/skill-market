@@ -28,6 +28,7 @@ COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/scripts ./scripts
 
-# Default command runs the API
+# Default command runs the API.
+# 环境变量由运行时注入（compose environment / 部署平台），镜像内不含 .env。
 EXPOSE 4000
-CMD ["node", "--env-file", ".env", "dist/src/main.js"]
+CMD ["node", "dist/src/main.js"]

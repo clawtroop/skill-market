@@ -11,7 +11,8 @@
     "lint": "tsc -p tsconfig.json --noEmit",
     "migrate": "node --env-file .env dist/scripts/migrate.js || node --env-file .env -r tsx/cjs scripts/migrate.ts",
     "ingest": "node --env-file .env -r tsx/cjs scripts/ingest-skill-market.ts",
-    "ingest:dry": "DRY_RUN=1 node --env-file .env -r tsx/cjs scripts/ingest-skill-market.ts"
+    "ingest:dry": "DRY_RUN=1 node --env-file .env -r tsx/cjs scripts/ingest-skill-market.ts",
+    "gen:sql": "node -r tsx/cjs scripts/gen-sql.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
