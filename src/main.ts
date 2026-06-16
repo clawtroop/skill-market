@@ -16,6 +16,14 @@ function loadEnvFallback() {
 async function bootstrap() {
   loadEnvFallback();
 
+  // 启动自检日志：主容器若起不来，可据此区分是缺 DATABASE_URL / TOS 配置还是其它问题。
+  console.log(
+    `[boot] DATABASE_URL=${process.env.DATABASE_URL ? 'set' : 'MISSING'} ` +
+      `TOS_BUCKET=${process.env.TOS_BUCKET || 'MISSING'} ` +
+      `TOS_PREFIX=${process.env.TOS_PREFIX || 'MISSING'} ` +
+      `node=${process.version}`,
+  );
+
   const corsOrigins = process.env.CORS_ORIGINS?.split(',')
     .map((s) => s.trim())
     .filter(Boolean);
