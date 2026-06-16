@@ -144,9 +144,9 @@ Claude Code
 
 ---
 
-## 四、各方接入要点
+## 四、接入要点
 
-### nanoctl 同事（主要对接方）
+### nanoctl 
 
 新增 `/api/skill-market/`* 内部接口（挂 `requireSidecarAuth()`，仅 agent-runtime 可调），内部转调本服务：
 
@@ -161,25 +161,17 @@ Claude Code
 需要在 nanoctl 配置中加入本服务地址，例如 `SKILL_MARKET_BASE_URL=http://skill-market.internal:4000`。
 **网络要求：nanoctl 必须能内网访问到本服务。**
 
-### agent-runtime 同事
+### agent-runtime 
 
-按方案文档「agent-runtime 改造」：注册 `skill_tools_`* MCP 工具、校验参数、转发到 nanoctl `/api/skill-market/*`。**不直接调用本服务**，只经 nanoctl。注入 `AgentID/WorkspaceID/RunID` 等 context 由 agent-runtime 负责。
+按方案文档「agent-runtime 改造」：注册 `skill_tools_`* MCP 工具、校验参数、转发到 nanoctl `/api/skill-market/`*。**不直接调用本服务**，只经 nanoctl。注入 `AgentID/WorkspaceID/RunID` 等 context 由 agent-runtime 负责。
 
-### Claude Code 接入同事
+### Claude Code
 
 按方案文档：strict MCP config 放出 `skill_tools_`* 工具；system prompt policy 引导 Claude Code 在「不确定/部分覆盖」时调用 `skill_tools_search_market`。判断权在 Claude Code，本服务只提供事实。
 
 ---
 
-## 五、安全建议
-
-- 本服务 v1 **无鉴权**，必须部署在内网，仅对 nanoctl 暴露，不要直接对公网/对 Claude Code 开放。
-- TOS 桶应为**私有**，服务通过 AK/SK 读取；不要开公共读。
-- 如需鉴权，可启用 `INTERNAL_API_TOKEN`（当前仅守卫 `/internal/`* 路径，如要保护 `/v1/*` 需补中间件）。
-
----
-
-## 六、自检命令（部署后验证本服务可用）
+## 五、自检命令（部署后验证本服务可用）
 
 ```bash
 BASE=http://<服务地址>:4000
