@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: skillmarket
+      POSTGRES_PASSWORD: skillmarket
+      POSTGRES_DB: skillmarket
+    ports:
+      - "5432:5432"
+    volumes:
+      - skillmarket_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skillmarket -d skillmarket"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  skill-market:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgres://skillmarket:skillmarket@db:5432/skillmarket
+      # Fill these for real TOS (or use a mock/local in dev)
+      TOS_ENDPOINT: ${TOS_ENDPOINT:-https://tos-s3-cn-beijing.volces.com}
+      TOS_ACCESS_KEY: ${TOS_ACCESS_KEY:-dummy}
+      TOS_SECRET_KEY: ${TOS_SECRET_KEY:-dummy}
+      TOS_BUCKET: ${TOS_BUCKET:-skill-market-dev}
+      TOS_REGION: ${TOS_REGION:-cn-beijing}
+      TOS_PREFIX: ${TOS_PREFIX:-skills/}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4000}
+      # For local dev you can point INGEST_CATALOG_ROOT to the reference inside the container via volume if needed
+      SKILL_MARKET_INGEST_CATALOG_ROOT: ${SKILL_MARKET_INGEST_CATALOG_ROOT:-/data/reference-skills}
+    ports:
+      - "4000:4000"
+    volumes:
+      # Mount host reference catalog for ingest inside container (adjust path)
+      - ./reference:/data/reference:ro
+    # Run migrate first (compiled JS if present) so that skill_market_items table exists before the app tries to load the index.
+    # The migrate script is idempotent (CREATE TABLE IF NOT EXISTS).
+    command: >
+      sh -c '
+        node --env-file .env dist/scripts/migrate.js || node --env-file .env -r tsx/cjs scripts/migrate.ts || echo "migrate step completed or skipped";
+        exec node --env-file .env dist/src/main.js
+      '
+
+volumes:
+  skillmarket_pgdata:

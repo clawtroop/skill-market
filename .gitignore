@@ -1,0 +1,29 @@
+# deps
+node_modules/
+
+# reference (local only)
+reference/
+
+# build
+dist/
+
+# env
+.env
+.env.local
+
+# logs
+*.log
+npm-debug.log*
+
+# temp
+tmp/
+*.tmp
+*.tar.gz
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
