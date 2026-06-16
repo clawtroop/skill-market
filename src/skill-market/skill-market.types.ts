@@ -77,6 +77,10 @@ export interface ExternalSearchSkillItem {
   description: string;
   confidence: number;
   reason: string;
+  // 下载完整 skill 包的直链（含 SKILL.md + 资源），agent 命中后直接据此下载。
+  archive_url: string;
+  // 归档 sha256，供下载后校验。
+  sha256?: string;
   categories?: string[];
   tags?: string[];
   version?: string;
@@ -89,23 +93,4 @@ export interface ExternalSearchSkillItem {
 
 export interface ExternalSearchResult {
   skills: ExternalSearchSkillItem[];
-}
-
-export interface ExternalSkillDetail {
-  skill_id: string;
-  name: string;
-  description: string;
-  version?: string;
-  content_hash?: string;
-  skill_md: string;
-  package: {
-    archive_url: string;
-    sha256: string;
-  };
-  metadata: {
-    categories?: string[];
-    tags?: string[];
-    entrypoint: string;
-    [key: string]: unknown;
-  };
 }

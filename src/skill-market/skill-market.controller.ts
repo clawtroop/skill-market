@@ -1,10 +1,8 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Headers,
-  NotFoundException,
   Param,
   Post,
   Query,
@@ -21,7 +19,6 @@ import { loadSkillMarketRuntimeConfig } from './skill-market.config';
 import {
   ExternalSearchResult,
   ExternalSearchSkillItem,
-  ExternalSkillDetail,
 } from './skill-market.types';
 
 interface SearchBody {
@@ -69,48 +66,13 @@ export class SkillMarketController {
         description: r.description,
         confidence,
         reason,
-        // categories/tags/version populated on detail; search keeps light
+        // 直接给出完整包下载直链；agent 命中即可下载，无需再走详情接口。
+        // sha256 由 download 响应头 X-Skill-SHA256 提供，search 保持纯内存零查询。
+        archive_url: this.buildArchiveUrl(r.skillId),
       };
     });
 
     return { skills };
-  }
-
-  @Get('/v1/skills/:skillId')
-  async getOne(@Param('skillId') skillId: string): Promise<ExternalSkillDetail> {
-    const row = await this.repo.findById(skillId);
-    if (!row) {
-      throw new NotFoundException(`skill not found: ${skillId}`);
-    }
-
-    const extra = (row.extra_metadata || {}) as Record<string, unknown>;
-    const meta = extra.metadata && typeof extra.metadata === 'object' ? (extra.metadata as Record<string, unknown>) : {};
-    const version = (extra.version as string) || (meta.version as string) || undefined;
-
-    const categories: string[] =
-      (meta.categories as string[]) ||
-      (extra.categories as string[]) ||
-      (Array.isArray(extra.tags) ? [] : []);
-    const tags: string[] = (meta.tags as string[]) || (extra.tags as string[]) || [];
-
-    return {
-      skill_id: row.skill_id,
-      name: row.name,
-      description: row.description,
-      version,
-      content_hash: row.archive_sha256,
-      skill_md: row.body,
-      package: {
-        archive_url: this.buildArchiveUrl(row.skill_id),
-        sha256: row.archive_sha256,
-      },
-      metadata: {
-        categories,
-        tags,
-        entrypoint: 'SKILL.md',
-        ...meta,
-      },
-    };
   }
 
   @Get('/v1/skills/:skillId/download')

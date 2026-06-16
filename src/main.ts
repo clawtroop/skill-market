@@ -50,7 +50,7 @@ async function bootstrap() {
   // eslint-disable-next-line no-console
   console.log(`Skill Market service listening on http://localhost:${port}`);
   // eslint-disable-next-line no-console
-  console.log('Endpoints: POST /v1/skills/search , GET /v1/skills/{id} , GET /v1/skills/{id}/download');
+  console.log('Endpoints: POST /v1/skills/search , GET /v1/skills/{id}/download');
 }
 
 void bootstrap();
