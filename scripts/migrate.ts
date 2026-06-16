@@ -26,12 +26,23 @@ async function main() {
   }
   console.log(`[migrate] DATABASE_URL -> ${describeDatabaseUrl(databaseUrl)}`);
 
-  const migrationPath = resolve(__dirname, '../migrations/001_skill_market.sql');
-  console.log(`[migrate] 迁移文件路径: ${migrationPath} 存在=${existsSync(migrationPath)}`);
-  if (!existsSync(migrationPath)) {
+  // 兼容两种运行位置：
+  //   源码 tsx:   __dirname=/app/scripts        -> ../migrations
+  //   编译产物:    __dirname=/app/dist/scripts   -> ../../migrations（migrations 不进 dist，在 /app 下）
+  // 按候选路径探测，取第一个存在的，避免相对层级写死导致 ENOENT。
+  const SQL_FILE = '001_skill_market.sql';
+  const candidates = [
+    resolve(__dirname, '../migrations', SQL_FILE),
+    resolve(__dirname, '../../migrations', SQL_FILE),
+    resolve(process.cwd(), 'migrations', SQL_FILE),
+  ];
+  const migrationPath = candidates.find((p) => existsSync(p));
+  console.log(`[migrate] 迁移文件候选: ${candidates.join(' | ')}`);
+  if (!migrationPath) {
     console.error('[migrate] ❌ 找不到迁移 SQL 文件（镜像未 COPY migrations/ 或路径不对）');
     process.exit(1);
   }
+  console.log(`[migrate] 使用迁移文件: ${migrationPath}`);
 
   // 8s 连接超时，避免连库不通时容器一直挂起看不到错误
   const pool = new Pool({ connectionString: databaseUrl, max: 2, connectionTimeoutMillis: 8000 });
