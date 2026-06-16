@@ -58,7 +58,7 @@ export class SkillMarketRepository implements OnModuleInit, SkillContentLoader {
       }));
       this.indexVersion = (this.indexVersion + 1) | 0;
     } catch (err: any) {
-      // Table may not exist yet (before migrate). Keep previous cache (usually empty) and do not bump version.
+      // Table may not exist yet. Keep previous cache (usually empty) and do not bump version.
       this.logger.warn(`reloadIndex failed (table may be missing): ${err?.message ?? err}`);
       // Do not increment version so callers know data is stale/empty.
     }

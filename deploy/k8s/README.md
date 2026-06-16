@@ -8,15 +8,14 @@
 |---|---|
 | `configmap.yaml` | 非敏感配置（端口、TOS endpoint/bucket/region/prefix、PUBLIC_BASE_URL 等） |
 | `secret.example.yaml` | 敏感配置**模板**（DB 连接串、TOS 密钥）。**勿提交填好真值的版本** |
-| `deployment.yaml` | Deployment（含 initContainer 建表 + 健康探针 + 资源限制） |
+| `deployment.yaml` | Deployment（单容器服务 + 健康探针 + 资源限制） |
 | `service.yaml` | ClusterIP Service（仅集群内暴露） |
 
 ## 前置条件
 
 1. 已构建并推送镜像到镜像仓库，替换 `deployment.yaml` 里两处 `image: skill-market:latest`。
 2. Postgres 已就绪，且**集群 Pod 能内网访问**（库未开公网时，服务须与库同 VPC/网络）。
-3. 运维已用 `migrations/001_skill_market.sql` + `dist-archives/skill_market_seed.sql` 建表并导入 499 行数据。
-   - 注：Deployment 的 initContainer 只做幂等建表（保险），**数据导入仍需运维单独执行**。
+3. Postgres 表结构和初始数据已由外部流程准备完成。
 4. 火山 TOS 桶 `nanobee-dev` 已上传归档至 `skill-market-mcp/skills/{skill_id}/skill.tar.gz`。
 
 ## 部署步骤

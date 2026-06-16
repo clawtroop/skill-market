@@ -19,16 +19,6 @@ spec:
       labels:
         app: skill-market
     spec:
-      # 建表（幂等 CREATE TABLE IF NOT EXISTS）。数据导入由运维单独执行，不在此处。
-      initContainers:
-        - name: migrate
-          image: skill-market:latest # 改成你的镜像仓库地址 + tag
-          command: ["node", "dist/scripts/migrate.js"]
-          envFrom:
-            - configMapRef:
-                name: skill-market-config
-            - secretRef:
-                name: skill-market-secret
       containers:
         - name: skill-market
           image: skill-market:latest # 改成你的镜像仓库地址 + tag

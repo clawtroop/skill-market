@@ -20,14 +20,6 @@ cp .env.example .env
 npm install
 ```
 
-### 数据库迁移
-
-```bash
-npm run migrate
-# 或者手动
-psql "$DATABASE_URL" -f migrations/001_skill_market.sql
-```
-
 ### 首次数据入库（ingest）
 
 从 reference 目录扫描 501 个 skill：
@@ -58,8 +50,6 @@ npm run build && npm start
 
 ```bash
 docker compose up -d db
-# 等待 db 健康后
-docker compose run --rm skill-market npm run migrate
 # 准备好 TOS 凭证后执行 ingest（需要把 TOS_* 也传给容器）
 docker compose run --rm -e TOS_ACCESS_KEY=... skill-market npm run ingest
 docker compose up skill-market
@@ -116,8 +106,6 @@ src/
     *.ts (service, repo, controller, config, types, errors, ranker, text, loader, module, filter)
 scripts/
   ingest-skill-market.ts
-  migrate.ts
-migrations/001_skill_market.sql
 ```
 
 本项目即为可独立部署的 skill market 新服务。

@@ -39,13 +39,6 @@ services:
       SKILL_MARKET_INGEST_CATALOG_ROOT: ${SKILL_MARKET_INGEST_CATALOG_ROOT:-/data/reference-skills}
     ports:
       - "4000:4000"
-    # 启动前先建表（幂等 CREATE TABLE IF NOT EXISTS），再起服务。
-    # 环境变量由上方 environment 注入，不依赖镜像内 .env 文件（镜像已 .dockerignore 排除 .env）。
-    command: >
-      sh -c '
-        node dist/scripts/migrate.js || node -r tsx/cjs scripts/migrate.ts || echo "migrate step completed or skipped";
-        exec node dist/src/main.js
-      '
 
 volumes:
   skillmarket_pgdata:

@@ -92,7 +92,7 @@ function main() {
 
   const lines: string[] = [];
   lines.push('-- Skill Market seed data. 由 scripts/gen-sql.ts 生成。');
-  lines.push('-- 执行前请先跑 migrations/001_skill_market.sql 建表。');
+  lines.push('-- 执行前请确保 skill_market_items 表结构已存在。');
   lines.push('BEGIN;');
   lines.push('');
 
