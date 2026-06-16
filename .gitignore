@@ -11,6 +11,9 @@ dist/
 .env
 .env.local
 
+# k8s secret（填好真值的版本，勿提交；仅保留 secret.example.yaml）
+deploy/k8s/secret.yaml
+
 # logs
 *.log
 npm-debug.log*

@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: skill-market
+  labels:
+    app: skill-market
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: skill-market
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: skill-market
+    spec:
+      # 建表（幂等 CREATE TABLE IF NOT EXISTS）。数据导入由运维单独执行，不在此处。
+      initContainers:
+        - name: migrate
+          image: skill-market:latest # 改成你的镜像仓库地址 + tag
+          command: ["node", "dist/scripts/migrate.js"]
+          envFrom:
+            - configMapRef:
+                name: skill-market-config
+            - secretRef:
+                name: skill-market-secret
+      containers:
+        - name: skill-market
+          image: skill-market:latest # 改成你的镜像仓库地址 + tag
+          ports:
+            - name: http
+              containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: skill-market-config
+            - secretRef:
+                name: skill-market-secret
+          # /v1/skills 返回 count，存活/就绪都用它
+          readinessProbe:
+            httpGet:
+              path: /v1/skills?limit=1
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /v1/skills?limit=1
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "192Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

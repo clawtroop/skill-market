@@ -1,0 +1,16 @@
+# ClusterIP：仅集群内暴露（供 nanoctl 内网访问）。
+# 本服务 v1 无鉴权，切勿用 LoadBalancer/NodePort 直接暴露公网。
+apiVersion: v1
+kind: Service
+metadata:
+  name: skill-market
+  labels:
+    app: skill-market
+spec:
+  type: ClusterIP
+  selector:
+    app: skill-market
+  ports:
+    - name: http
+      port: 4000
+      targetPort: http

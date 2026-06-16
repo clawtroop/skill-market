@@ -1,0 +1,21 @@
+# 非敏感运行时配置。敏感项（DB 连接串、TOS 密钥）见 secret.example.yaml。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: skill-market-config
+  labels:
+    app: skill-market
+data:
+  PORT: "4000"
+  # CORS：留空为 *，生产建议填具体来源
+  CORS_ORIGINS: ""
+  # 火山 TOS（华东2上海，原生 SDK 域名，不带 -s3）
+  TOS_ENDPOINT: "https://tos-cn-shanghai.volces.com"
+  TOS_BUCKET: "nanobee-dev"
+  TOS_REGION: "cn-shanghai"
+  # 必须与实际上传路径 + SQL 里的 tos_object_key 完全一致（上传时多套了一层 skills/）
+  TOS_PREFIX: "skill-market-mcp/skills/"
+  # 单个资源最大字节（1MB）
+  SKILL_MARKET_MAX_RESOURCE_BYTES: "1048576"
+  # 对外可达地址，用于详情接口拼 archive_url；改成 Service/Ingress 实际地址
+  PUBLIC_BASE_URL: "http://skill-market.default.svc.cluster.local:4000"
