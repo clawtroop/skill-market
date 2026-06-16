@@ -9,8 +9,8 @@ data:
   PORT: "4000"
   # CORS：留空为 *，生产建议填具体来源
   CORS_ORIGINS: ""
-  # 火山 TOS（华东2上海，原生 SDK 域名，不带 -s3）
-  TOS_ENDPOINT: "https://tos-cn-shanghai.volces.com"
+  # 火山 TOS（华东2上海，原生 SDK endpoint 不带协议、不带 -s3）
+  TOS_ENDPOINT: "tos-cn-shanghai.volces.com"
   TOS_BUCKET: "nanobee-dev"
   TOS_REGION: "cn-shanghai"
   # 必须与实际上传路径 + SQL 里的 tos_object_key 完全一致（上传时多套了一层 skills/）

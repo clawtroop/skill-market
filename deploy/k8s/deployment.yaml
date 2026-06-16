@@ -21,7 +21,9 @@ spec:
     spec:
       containers:
         - name: skill-market
-          image: skill-market:latest # 改成你的镜像仓库地址 + tag
+          image: nanobee-cn-shanghai.cr.volces.com/nanobee/skill-market-dev:latest
+          # 用 latest 必须配 Always，否则节点缓存旧镜像 + IfNotPresent 会导致升级不生效
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 4000
