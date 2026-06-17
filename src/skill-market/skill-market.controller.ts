@@ -1,8 +1,8 @@
 import {
+  BadGatewayException,
   Body,
   Controller,
   Get,
-  Headers,
   HttpCode,
   Inject,
   NotFoundException,
@@ -13,6 +13,7 @@ import {
   UseFilters,
   Logger,
 } from '@nestjs/common';
+import { createHash } from 'node:crypto';
 import type { Response } from 'express';
 import { SkillMarketService } from './skill-market.service';
 import { SkillMarketExceptionFilter } from './skill-market-exception.filter';
@@ -71,9 +72,8 @@ export class SkillMarketController {
     return `${base.replace(/\/$/, '')}/v1/skills/${encodeURIComponent(skillId)}/download`;
   }
 
-  private buildContentHash(sha256?: string | null): string | undefined {
-    if (!sha256) return undefined;
-    return sha256.startsWith('sha256:') ? sha256 : `sha256:${sha256}`;
+  private sha256Hex(buf: Buffer): string {
+    return createHash('sha256').update(buf).digest('hex');
   }
 
   @Post('/v1/skills/search')
@@ -111,17 +111,23 @@ export class SkillMarketController {
       throw new NotFoundException(`skill not found: ${skillId}`);
     }
 
-    return {
-      skill_id: row.skill_id,
-      name: row.name || skillId,
-      archive_url: this.buildArchiveUrl(skillId),
-      content_hash: this.buildContentHash(row.archive_sha256),
-      entrypoint: 'SKILL.md',
-    };
+    try {
+      const buf = await this.tos.getObjectBuffer(row.tos_object_key);
+      return {
+        skill_id: row.skill_id,
+        name: row.name || skillId,
+        archive_url: this.buildArchiveUrl(skillId),
+        content_hash: `sha256:${this.sha256Hex(buf)}`,
+        entrypoint: 'SKILL.md',
+      };
+    } catch (err: any) {
+      this.logger.error(`Failed to fetch skill archive metadata ${skillId} from storage: ${err?.message ?? err}`);
+      throw new BadGatewayException('failed to fetch archive from storage');
+    }
   }
 
   @Get('/v1/skills/:skillId/download')
-  async download(@Param('skillId') skillId: string, @Res() res: Response, @Headers() headers: Record<string, string>) {
+  async download(@Param('skillId') skillId: string, @Res() res: Response) {
     const row = await this.repo.findById(skillId);
     if (!row) {
       res.status(404).json({ message: `skill not found: ${skillId}` });
@@ -129,24 +135,19 @@ export class SkillMarketController {
     }
 
     const key = row.tos_object_key;
-    // Optional range support could be added; for v1 simple full download
-    const head = await this.tos.headObject(key);
-
-    res.setHeader('Content-Type', 'application/gzip');
-    res.setHeader('Content-Disposition', `attachment; filename="${skillId}-skill.tar.gz"`);
-    res.setHeader('X-Skill-ID', skillId);
-    if (row.archive_sha256) res.setHeader('X-Skill-SHA256', row.archive_sha256);
-    if (row.name) res.setHeader('X-Skill-Name', row.name);
-    if (head.contentLength) res.setHeader('Content-Length', head.contentLength);
-
     // Use buffer path for maximum reliability with Volcano TOS (avoids stream shape guessing).
     // Skill tarballs are small-to-medium (documentation + scripts/assets); buffering is safe and simple.
     try {
       const buf = await this.tos.getObjectBuffer(key);
-      // Ensure Content-Length if head didn't provide it (or was 0)
-      if (!head.contentLength && buf.length > 0) {
-        res.setHeader('Content-Length', buf.length);
-      }
+      const sha256 = this.sha256Hex(buf);
+
+      res.setHeader('Content-Type', 'application/gzip');
+      res.setHeader('Content-Disposition', `attachment; filename="${skillId}-skill.tar.gz"`);
+      res.setHeader('X-Skill-ID', skillId);
+      res.setHeader('X-Skill-SHA256', sha256);
+      if (row.name) res.setHeader('X-Skill-Name', row.name);
+      res.setHeader('Content-Length', buf.length);
+
       res.end(buf);
     } catch (err: any) {
       this.logger.error(`Failed to fetch skill archive ${skillId} from storage: ${err?.message ?? err}`);

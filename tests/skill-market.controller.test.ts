@@ -13,6 +13,7 @@ import { TosStorageService } from '../src/common/storage/tos-storage.service';
 const publicBaseUrl = 'http://skill-market.default.svc.cluster.local:4000';
 const archiveBody = Buffer.from('fake gzipped skill archive');
 const archiveSha256 = createHash('sha256').update(archiveBody).digest('hex');
+const staleArchiveSha256 = '0c5b220571711aa465a03f8a857c6af0a2faf30da8b756276b2762645115d677';
 
 const row: SkillMarketRow = {
   skill_id: 'shadcn-ui',
@@ -23,16 +24,16 @@ const row: SkillMarketRow = {
   body: '# shadcn-ui',
   resources: [],
   tos_object_key: 'skills/shadcn-ui.tar.gz',
-  archive_sha256: archiveSha256,
+  archive_sha256: staleArchiveSha256,
   archive_size_bytes: archiveBody.length,
   extra_metadata: null,
 };
 
 let app: INestApplication;
 
-function parseBinary(res: NodeJS.ReadableStream, callback: (err: Error | null, body?: Buffer) => void) {
+function parseBinary(res: any, callback: (err: Error | null, body?: Buffer) => void) {
   const chunks: Buffer[] = [];
-  res.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+  res.on('data', (chunk: Buffer | Uint8Array | string) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
   res.on('end', () => callback(null, Buffer.concat(chunks)));
   res.on('error', callback);
 }
@@ -117,6 +118,7 @@ describe('SkillMarketController download endpoints', () => {
 
     assert.equal(Buffer.compare(res.body, archiveBody), 0);
     assert.equal(res.headers['x-skill-sha256'], archiveSha256);
+    assert.notEqual(res.headers['x-skill-sha256'], staleArchiveSha256);
   });
 
   test('metadata archive_url points to an accessible archive endpoint', async () => {
@@ -149,5 +151,6 @@ describe('SkillMarketController download endpoints', () => {
 
     const actualHash = createHash('sha256').update(archive.body).digest('hex');
     assert.equal(metadata.body.content_hash, `sha256:${actualHash}`);
+    assert.equal(archive.headers['x-skill-sha256'], actualHash);
   });
 });
