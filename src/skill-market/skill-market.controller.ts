@@ -3,6 +3,9 @@ import {
   Controller,
   Get,
   Headers,
+  HttpCode,
+  Inject,
+  NotFoundException,
   Param,
   Post,
   Query,
@@ -17,6 +20,7 @@ import { SkillMarketRepository } from './skill-market.repository';
 import { TosStorageService } from '../common/storage/tos-storage.service';
 import { loadSkillMarketRuntimeConfig } from './skill-market.config';
 import {
+  ExternalSkillDownloadMetadata,
   ExternalSearchResult,
   ExternalSearchSkillItem,
 } from './skill-market.types';
@@ -31,6 +35,19 @@ interface SearchBody {
   max_results?: number;
 }
 
+interface DownloadMetadataBody {
+  agent_id?: string;
+  run_id?: string;
+  workspace_id?: string;
+  path_spec?: {
+    workspace_root?: string;
+    project_dir?: string;
+  };
+  skill_id?: string;
+  name?: string;
+  source?: string;
+}
+
 @UseFilters(SkillMarketExceptionFilter)
 @Controller()
 export class SkillMarketController {
@@ -38,8 +55,11 @@ export class SkillMarketController {
   private readonly publicBase: string;
 
   constructor(
+    @Inject(SkillMarketService)
     private readonly market: SkillMarketService,
+    @Inject(SkillMarketRepository)
     private readonly repo: SkillMarketRepository,
+    @Inject(TosStorageService)
     private readonly tos: TosStorageService,
   ) {
     const cfg = loadSkillMarketRuntimeConfig();
@@ -49,6 +69,11 @@ export class SkillMarketController {
   private buildArchiveUrl(skillId: string): string {
     const base = this.publicBase || ''; // if empty, controller can also use relative or let caller know
     return `${base.replace(/\/$/, '')}/v1/skills/${encodeURIComponent(skillId)}/download`;
+  }
+
+  private buildContentHash(sha256?: string | null): string | undefined {
+    if (!sha256) return undefined;
+    return sha256.startsWith('sha256:') ? sha256 : `sha256:${sha256}`;
   }
 
   @Post('/v1/skills/search')
@@ -73,6 +98,26 @@ export class SkillMarketController {
     });
 
     return { skills };
+  }
+
+  @Post('/v1/skills/:skillId/download')
+  @HttpCode(200)
+  async downloadMetadata(
+    @Param('skillId') skillId: string,
+    @Body() _body: DownloadMetadataBody,
+  ): Promise<ExternalSkillDownloadMetadata> {
+    const row = await this.repo.findById(skillId);
+    if (!row) {
+      throw new NotFoundException(`skill not found: ${skillId}`);
+    }
+
+    return {
+      skill_id: row.skill_id,
+      name: row.name || skillId,
+      archive_url: this.buildArchiveUrl(skillId),
+      content_hash: this.buildContentHash(row.archive_sha256),
+      entrypoint: 'SKILL.md',
+    };
   }
 
   @Get('/v1/skills/:skillId/download')

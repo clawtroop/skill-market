@@ -9,6 +9,7 @@
     "start": "node --env-file .env dist/src/main.js",
     "build": "tsc -p tsconfig.json",
     "lint": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test -r tsx/cjs \"tests/**/*.test.ts\"",
     "ingest": "node --env-file .env -r tsx/cjs scripts/ingest-skill-market.ts",
     "ingest:dry": "DRY_RUN=1 node --env-file .env -r tsx/cjs scripts/ingest-skill-market.ts",
     "gen:sql": "node -r tsx/cjs scripts/gen-sql.ts"

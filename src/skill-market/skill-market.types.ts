@@ -94,3 +94,11 @@ export interface ExternalSearchSkillItem {
 export interface ExternalSearchResult {
   skills: ExternalSearchSkillItem[];
 }
+
+export interface ExternalSkillDownloadMetadata {
+  skill_id: string;
+  name: string;
+  archive_url: string;
+  content_hash?: string;
+  entrypoint?: string;
+}
